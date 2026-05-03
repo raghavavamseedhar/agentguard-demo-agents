@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraud Investigation Assistant — Acme Bank FIU</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1e3651;
+      color: white;
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      background: #c0392b;
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .header-title { font-size: 15px; font-weight: 600; }
+    .header-sub { font-size: 12px; opacity: 0.7; margin-top: 1px; }
+    .agentguard-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2ecc71;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    .page-header { margin-bottom: 1.5rem; }
+    .page-header h1 { font-size: 22px; font-weight: 700; color: #1e3651; }
+    .page-header p { font-size: 14px; color: #666; margin-top: 4px; }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .sample-btn {
+      background: none;
+      border: 1px dashed #999;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: all 0.15s;
+    }
+    .sample-btn:hover { border-color: #1e3651; color: #1e3651; background: #f8fafc; }
+
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      border: 1px solid #dde1e7;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      color: #1a1a2e;
+      line-height: 1.6;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: #1e3651; }
+
+    .action-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+
+    .investigate-btn {
+      background: #1e3651;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s;
+    }
+    .investigate-btn:hover:not(:disabled) { background: #2c4f72; }
+    .investigate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .disclaimer {
+      font-size: 12px;
+      color: #e67e22;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Results */
+    #results { display: none; }
+
+    .risk-banner {
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .risk-banner.HIGH { background: #fdf2f2; border: 2px solid #e74c3c; }
+    .risk-banner.MEDIUM { background: #fffbf0; border: 2px solid #e67e22; }
+    .risk-banner.LOW { background: #f0fdf4; border: 2px solid #27ae60; }
+
+    .risk-label { font-size: 13px; font-weight: 600; color: #666; }
+    .risk-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+    .HIGH .risk-value { color: #e74c3c; }
+    .MEDIUM .risk-value { color: #e67e22; }
+    .LOW .risk-value { color: #27ae60; }
+
+    .confidence-ring {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .confidence-num { font-size: 26px; font-weight: 800; color: #1e3651; }
+    .confidence-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .info-card {
+      background: #f8fafc;
+      border: 1px solid #e8edf2;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .info-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .info-card-value { font-size: 14px; color: #1a1a2e; line-height: 1.5; }
+
+    .action-card {
+      background: #1e3651;
+      color: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .action-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      opacity: 0.7;
+      margin-bottom: 6px;
+    }
+    .action-card-value { font-size: 14px; font-weight: 600; line-height: 1.5; }
+
+    .flag-list { list-style: none; }
+    .flag-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .flag-item:last-child { border-bottom: none; }
+    .flag-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #e74c3c;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .reg-box {
+      background: #fff8f0;
+      border: 1px solid #f0a500;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 13px;
+      color: #7d4e00;
+      line-height: 1.6;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: #fdf2f2;
+      border: 1px solid #e74c3c;
+      border-radius: 8px;
+      padding: 1rem;
+      color: #c0392b;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">ACME BANK</div>
+    <div>
+      <div class="header-title">Financial Intelligence Unit</div>
+      <div class="header-sub">Fraud Investigation Assistant</div>
+    </div>
+  </div>
+  <div class="agentguard-badge">
+    <div class="badge-dot"></div>
+    Monitored by AgentGuard
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Fraud Investigation Assistant</h1>
+    <p>Paste suspicious transaction details for AI-assisted analysis. Every investigation is logged and audited via AgentGuard.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Transaction / Activity Description</div>
+    <button class="sample-btn" onclick="loadSample()">⚡ Load sample case</button>
+    <textarea id="input" placeholder="Describe the suspicious activity or paste transaction data...&#10;&#10;Example: Account holder, transaction amounts, dates, patterns, customer profile..."></textarea>
+    <div class="action-row">
+      <button class="investigate-btn" id="analyzeBtn" onclick="investigate()">
+        <span id="btnText">🔍 Run Investigation</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+      <div class="disclaimer">⚠ AI-assisted analysis — human verification required before any action</div>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="results">
+    <div class="risk-banner" id="riskBanner">
+      <div>
+        <div class="risk-label">RISK LEVEL</div>
+        <div class="risk-value" id="riskValue">—</div>
+      </div>
+      <div class="confidence-ring">
+        <div class="confidence-num" id="confidenceValue">—</div>
+        <div class="confidence-label">CONFIDENCE %</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚩 Red Flags Identified</div>
+      <ul class="flag-list" id="flagList"></ul>
+    </div>
+
+    <div class="action-card">
+      <div class="action-card-label">Recommended Action</div>
+      <div class="action-card-value" id="recommendedAction">—</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="info-card">
+        <div class="info-card-label">Pattern Summary</div>
+        <div class="info-card-value" id="patternSummary">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Investigation Notes</div>
+        <div class="info-card-value" id="investigationNotes">—</div>
+      </div>
+    </div>
+
+    <div class="reg-box" id="regBox" style="display:none">
+      <strong>⚖ Regulatory Obligations:</strong> <span id="regText"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SAMPLE = `Account Profile:
+- Customer: UAE National, Premium Banking, 9 years with bank
+- Declared occupation: Secondary school teacher
+- Monthly salary: AED 8,500 (direct deposit from Ministry of Education)
+
+Flagged Transactions (last 5 days):
+- 14 cash deposits of AED 9,750 each at 9 different branches across Dubai and Sharjah
+- Total deposited: AED 136,500 over 5 days
+- All deposits occurred between 09:00–11:30 AM on weekdays (during school hours)
+- Within 48 hours: 3 outbound SWIFT transfers to accounts in Turkey and Georgia
+  - Transfer 1: AED 45,000 to Istanbul (beneficiary unknown entity)
+  - Transfer 2: AED 44,500 to Tbilisi (beneficiary: private individual)
+  - Transfer 3: AED 43,000 to Istanbul (same beneficiary as Transfer 1)
+- Remaining balance: AED 4,000
+
+Prior history: No previous suspicious activity. No international transfers in prior 9 years.`
+
+  function loadSample() {
+    document.getElementById('input').value = SAMPLE
+  }
+
+  async function investigate() {
+    const description = document.getElementById('input').value.trim()
+    if (!description) return
+
+    const btn = document.getElementById('analyzeBtn')
+    const spinner = document.getElementById('spinner')
+    const btnText = document.getElementById('btnText')
+    const errorBox = document.getElementById('errorBox')
+    const results = document.getElementById('results')
+
+    btn.disabled = true
+    spinner.style.display = 'block'
+    btnText.textContent = 'Investigating…'
+    errorBox.style.display = 'none'
+    results.style.display = 'none'
+
+    try {
+      const res = await fetch('/api/investigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      })
+      const data = await res.json()
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Investigation failed')
+      }
+
+      renderResult(data)
+    } catch (err) {
+      errorBox.textContent = '❌ ' + err.message
+      errorBox.style.display = 'block'
+    } finally {
+      btn.disabled = false
+      spinner.style.display = 'none'
+      btnText.textContent = '🔍 Run Investigation'
+    }
+  }
+
+  function renderResult(d) {
+    const banner = document.getElementById('riskBanner')
+    banner.className = 'risk-banner ' + d.risk_level
+    document.getElementById('riskValue').textContent = d.risk_level
+    document.getElementById('confidenceValue').textContent = d.confidence + '%'
+
+    const flagList = document.getElementById('flagList')
+    flagList.innerHTML = (d.red_flags || []).map(f =>
+      `<li class="flag-item"><div class="flag-dot"></div><span>${f}</span></li>`
+    ).join('')
+
+    document.getElementById('recommendedAction').textContent = d.recommended_action || '—'
+    document.getElementById('patternSummary').textContent = d.pattern_summary || '—'
+    document.getElementById('investigationNotes').textContent = d.investigation_notes || '—'
+
+    const regBox = document.getElementById('regBox')
+    if (d.regulatory_obligations) {
+      document.getElementById('regText').textContent = d.regulatory_obligations
+      regBox.style.display = 'block'
+    } else {
+      regBox.style.display = 'none'
+    }
+
+    document.getElementById('results').style.display = 'block'
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+</script>
+</body>
+</html>

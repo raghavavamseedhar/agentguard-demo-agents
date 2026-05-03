@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Regulatory Compliance Checker — Acme Bank</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a365d;
+      color: white;
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      background: #2980b9;
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .header-title { font-size: 15px; font-weight: 600; }
+    .header-sub { font-size: 12px; opacity: 0.7; margin-top: 1px; }
+    .agentguard-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2ecc71;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    .page-header { margin-bottom: 1.5rem; }
+    .page-header h1 { font-size: 22px; font-weight: 700; color: #1a365d; }
+    .page-header p { font-size: 14px; color: #666; margin-top: 4px; }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .form-row { display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1rem; }
+    @media (max-width: 600px) { .form-row { flex-direction: column; } }
+
+    label { font-size: 13px; font-weight: 600; color: #444; display: block; margin-bottom: 6px; }
+
+    select {
+      border: 1px solid #dde1e7;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a2e;
+      background: white;
+      min-width: 220px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    select:focus { outline: none; border-color: #1a365d; }
+
+    .sample-btn {
+      background: none;
+      border: 1px dashed #999;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .sample-btn:hover { border-color: #1a365d; color: #1a365d; background: #f8fafc; }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid #dde1e7;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      color: #1a1a2e;
+      line-height: 1.6;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: #1a365d; }
+
+    .check-btn {
+      background: #1a365d;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      transition: background 0.15s;
+    }
+    .check-btn:hover:not(:disabled) { background: #2c4f7c; }
+    .check-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .disclaimer { font-size: 12px; color: #666; margin-top: 8px; }
+
+    /* Status banner */
+    .status-banner {
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .COMPLIANT { background: #f0fdf4; border: 2px solid #27ae60; }
+    .PARTIALLY_COMPLIANT { background: #fffbf0; border: 2px solid #e67e22; }
+    .NON_COMPLIANT { background: #fdf2f2; border: 2px solid #e74c3c; }
+    .REQUIRES_REVIEW { background: #f5f0ff; border: 2px solid #8e44ad; }
+
+    .status-label { font-size: 13px; font-weight: 600; color: #666; }
+    .status-value { font-size: 20px; font-weight: 800; margin-top: 2px; }
+    .COMPLIANT .status-value { color: #27ae60; }
+    .PARTIALLY_COMPLIANT .status-value { color: #e67e22; }
+    .NON_COMPLIANT .status-value { color: #e74c3c; }
+    .REQUIRES_REVIEW .status-value { color: #8e44ad; }
+
+    .score-block { display: flex; flex-direction: column; align-items: flex-end; }
+    .score-number { font-size: 36px; font-weight: 800; color: #1a365d; line-height: 1; }
+    .score-bar-wrap { width: 140px; height: 6px; background: #e0e7ef; border-radius: 3px; margin-top: 6px; }
+    .score-bar { height: 6px; border-radius: 3px; transition: width 0.8s ease; }
+    .score-bar.high { background: #27ae60; }
+    .score-bar.mid { background: #e67e22; }
+    .score-bar.low { background: #e74c3c; }
+    .score-label { font-size: 11px; color: #888; margin-top: 3px; text-align: right; }
+
+    /* Gaps table */
+    .gaps-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .gaps-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: #f0f2f5;
+      font-weight: 700;
+      color: #555;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .gaps-table td { padding: 10px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
+    .gaps-table tr:last-child td { border-bottom: none; }
+
+    .severity-badge {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .CRITICAL { background: #fde8e8; color: #c0392b; }
+    .MAJOR { background: #fef3e2; color: #d35400; }
+    .MINOR { background: #fefce8; color: #a16207; }
+
+    .compliant-list { list-style: none; }
+    .compliant-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f5f7fa;
+      font-size: 14px;
+      color: #2d6a4f;
+      line-height: 1.5;
+    }
+    .compliant-item:last-child { border-bottom: none; }
+    .check-icon { color: #27ae60; font-size: 16px; flex-shrink: 0; }
+
+    .actions-list { list-style: none; counter-reset: actions; }
+    .actions-item {
+      counter-increment: actions;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #f5f7fa;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .actions-item:last-child { border-bottom: none; }
+    .action-num {
+      width: 22px; height: 22px;
+      background: #1a365d;
+      color: white;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .review-box {
+      background: #eef4ff;
+      border: 1px solid #b3cde8;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 14px;
+      color: #1a365d;
+      line-height: 1.6;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      background: #fdf2f2;
+      border: 1px solid #e74c3c;
+      border-radius: 8px;
+      padding: 1rem;
+      color: #c0392b;
+      font-size: 14px;
+      display: none;
+      margin-bottom: 1rem;
+    }
+
+    #results { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">ACME BANK</div>
+    <div>
+      <div class="header-title">Compliance Division</div>
+      <div class="header-sub">Regulatory Compliance Checker</div>
+    </div>
+  </div>
+  <div class="agentguard-badge">
+    <div class="badge-dot"></div>
+    Monitored by AgentGuard
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Regulatory Compliance Checker</h1>
+    <p>Paste a policy, procedure, or business practice to check it against a regulatory framework. Every check is logged and audited via AgentGuard.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Document & Framework</div>
+    <div class="form-row">
+      <div>
+        <label for="regulation">Regulatory Framework</label>
+        <select id="regulation">
+          <option value="CBUAE (Central Bank UAE) — AML/CFT and Consumer Protection guidelines">CBUAE — Central Bank UAE</option>
+          <option value="SAMA (Saudi Central Bank) — Banking regulations and Open Banking framework">SAMA — Saudi Central Bank</option>
+          <option value="AML/CFT — FATF 40 Recommendations and UAE Federal Decree-Law No. 20/2018">AML/CFT (FATF)</option>
+          <option value="Basel III/IV — Capital adequacy, liquidity, and risk management requirements">Basel III/IV</option>
+          <option value="UAE PDPL — Personal Data Protection Law (Federal Decree-Law No. 45/2021)">UAE PDPL — Data Protection</option>
+          <option value="PCI-DSS v4.0 — Payment Card Industry Data Security Standard">PCI-DSS v4.0</option>
+        </select>
+      </div>
+      <button class="sample-btn" onclick="loadSample()">⚡ Load sample policy</button>
+    </div>
+    <label for="docInput">Policy / Procedure Text</label>
+    <textarea id="docInput" placeholder="Paste the policy document, procedure, or business practice text here..."></textarea>
+    <button class="check-btn" id="checkBtn" onclick="checkCompliance()">
+      <span id="btnText">📋 Check Compliance</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <p class="disclaimer">This AI analysis aids compliance review and is not a substitute for qualified legal opinion.</p>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div id="results">
+    <div class="status-banner" id="statusBanner">
+      <div>
+        <div class="status-label">COMPLIANCE STATUS</div>
+        <div class="status-value" id="statusValue">—</div>
+      </div>
+      <div class="score-block">
+        <div class="score-number" id="scoreNumber">—</div>
+        <div class="score-bar-wrap">
+          <div class="score-bar" id="scoreBar" style="width:0%"></div>
+        </div>
+        <div class="score-label">Overall Score</div>
+      </div>
+    </div>
+
+    <div class="card" id="gapsCard" style="display:none">
+      <div class="card-title">⚠ Compliance Gaps</div>
+      <table class="gaps-table">
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Requirement</th>
+            <th>Finding</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody id="gapsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card" id="compliantCard" style="display:none">
+      <div class="card-title">✅ Compliant Areas</div>
+      <ul class="compliant-list" id="compliantList"></ul>
+    </div>
+
+    <div class="card" id="actionsCard" style="display:none">
+      <div class="card-title">🎯 Immediate Actions Required</div>
+      <ul class="actions-list" id="actionsList"></ul>
+    </div>
+
+    <div class="review-box" id="reviewBox"></div>
+  </div>
+</div>
+
+<script>
+  const SAMPLE = `Digital Account Opening — Standard Operating Procedure v2.3
+Effective Date: 01 March 2024
+
+1. SCOPE
+This procedure applies to all digital (app and web) account opening journeys for individual retail customers (UAE residents only).
+
+2. IDENTITY VERIFICATION
+2.1 Customers must upload a photograph of their Emirates ID (front and back).
+2.2 A real-time selfie is captured and matched against the Emirates ID photograph.
+2.3 Accounts are activated within 24 hours of successful verification.
+
+3. TRANSACTION LIMITS
+3.1 Newly opened accounts are subject to a maximum monthly transaction limit of AED 50,000 for the first 30 days.
+3.2 For transactions above AED 100,000, Relationship Manager (RM) approval is required.
+
+4. DATA STORAGE
+4.1 Customer identity documents are stored in encrypted form on bank servers.
+4.2 Documents are retained for a period of 5 years from account closure.
+
+5. ACCOUNT MONITORING
+5.1 All newly opened accounts are flagged for enhanced monitoring for 90 days.
+5.2 Unusual transaction patterns are escalated to the Compliance team.`
+
+  function loadSample() {
+    document.getElementById('docInput').value = SAMPLE
+    document.getElementById('regulation').value = document.getElementById('regulation').options[0].value
+  }
+
+  async function checkCompliance() {
+    const docText = document.getElementById('docInput').value.trim()
+    const regulation = document.getElementById('regulation').value
+    if (!docText) return
+
+    const btn = document.getElementById('checkBtn')
+    const spinner = document.getElementById('spinner')
+    const btnText = document.getElementById('btnText')
+    const errorBox = document.getElementById('errorBox')
+    const results = document.getElementById('results')
+
+    btn.disabled = true
+    spinner.style.display = 'block'
+    btnText.textContent = 'Checking…'
+    errorBox.style.display = 'none'
+    results.style.display = 'none'
+
+    try {
+      const res = await fetch('/api/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document: docText, regulation }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || 'Check failed')
+      renderResult(data)
+    } catch (err) {
+      errorBox.textContent = '❌ ' + err.message
+      errorBox.style.display = 'block'
+    } finally {
+      btn.disabled = false
+      spinner.style.display = 'none'
+      btnText.textContent = '📋 Check Compliance'
+    }
+  }
+
+  function renderResult(d) {
+    const banner = document.getElementById('statusBanner')
+    const statusKey = d.compliance_status || 'REQUIRES_REVIEW'
+    banner.className = 'status-banner ' + statusKey
+
+    const labels = {
+      COMPLIANT: 'COMPLIANT',
+      PARTIALLY_COMPLIANT: 'PARTIALLY COMPLIANT',
+      NON_COMPLIANT: 'NON-COMPLIANT',
+      REQUIRES_REVIEW: 'REQUIRES REVIEW',
+    }
+    document.getElementById('statusValue').textContent = labels[statusKey] || statusKey
+    document.getElementById('scoreNumber').textContent = (d.overall_score || 0) + '%'
+
+    const bar = document.getElementById('scoreBar')
+    const score = d.overall_score || 0
+    bar.style.width = score + '%'
+    bar.className = 'score-bar ' + (score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low')
+
+    // Gaps
+    const gaps = d.gaps || []
+    const gapsCard = document.getElementById('gapsCard')
+    if (gaps.length > 0) {
+      const tbody = document.getElementById('gapsBody')
+      tbody.innerHTML = gaps.map(g => `
+        <tr>
+          <td><span class="severity-badge ${g.severity}">${g.severity}</span></td>
+          <td style="font-weight:600;color:#333">${g.requirement}</td>
+          <td style="color:#555">${g.finding}</td>
+          <td style="color:#333">${g.recommendation}</td>
+        </tr>`).join('')
+      gapsCard.style.display = 'block'
+    }
+
+    // Compliant areas
+    const compliant = d.compliant_areas || []
+    const compliantCard = document.getElementById('compliantCard')
+    if (compliant.length > 0) {
+      document.getElementById('compliantList').innerHTML = compliant.map(c =>
+        `<li class="compliant-item"><span class="check-icon">✓</span><span>${c}</span></li>`
+      ).join('')
+      compliantCard.style.display = 'block'
+    }
+
+    // Immediate actions
+    const actions = d.immediate_actions || []
+    const actionsCard = document.getElementById('actionsCard')
+    if (actions.length > 0) {
+      document.getElementById('actionsList').innerHTML = actions.map((a, i) =>
+        `<li class="actions-item"><div class="action-num">${i + 1}</div><span>${a}</span></li>`
+      ).join('')
+      actionsCard.style.display = 'block'
+    }
+
+    // Review recommendation
+    if (d.review_recommendation) {
+      document.getElementById('reviewBox').innerHTML =
+        `<strong>📅 Review Recommendation:</strong> ${d.review_recommendation}`
+    }
+
+    document.getElementById('results').style.display = 'block'
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+</script>
+</body>
+</html>
